@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_timing",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_timing",
+  "parent":{
+    "name":"scripts",
+    "path":"folders/system/scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
