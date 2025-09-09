@@ -1,4 +1,5 @@
 function Weapon(
+	_WeaponValue,
 	_fireFn,
 	_FireMode,
 	_ReloadMode,
@@ -8,6 +9,7 @@ function Weapon(
 	_AmmoType,
 	_ammoCostPerRound
 ) constructor {
+	weaponValue = _WeaponValue;
 	fireFn = _fireFn;
 	fireMode = _FireMode;
 	reloadMode = _ReloadMode;
@@ -41,6 +43,7 @@ enum WeaponValue {
 	Pistol,
 	Shotgun,
 	AK47,
+	Bazooka
 }
 
 function initWeaponry() {
@@ -219,6 +222,7 @@ function getWeapon(_WeaponValue) {
 	switch(_WeaponValue) {
 		case WeaponValue.Pistol:
 			return new Weapon(
+				WeaponValue.Pistol,
 				function(_x, _y, _direction, _owner) {
 					notifyRadius(_x, _y, _owner, 512);
 					instance_create_layer(_x, _y, "Instances", prnt_bullet, {
@@ -234,6 +238,7 @@ function getWeapon(_WeaponValue) {
 			
 		case WeaponValue.Shotgun:
 			return new Weapon(
+				WeaponValue.Shotgun,
 				function(_x, _y, _direction, _owner) {
 					notifyRadius(_x, _y, _owner, 512);
 					repeat(8) {
@@ -253,6 +258,7 @@ function getWeapon(_WeaponValue) {
 			
 		case WeaponValue.AK47:
 			return new Weapon(
+				WeaponValue.AK47,
 				function(_x, _y, _direction, _owner) {
 					notifyRadius(_x, _y, _owner, 512);
 					instance_create_layer(_x, _y, "Instances", prnt_bullet, {
@@ -265,6 +271,27 @@ function getWeapon(_WeaponValue) {
 				ReloadMode.Clip,
 				seconds(.1), 60, seconds(1.8),
 				AmmoType.Bullets,
+				1
+			);
+			
+		case WeaponValue.Bazooka:
+			return new Weapon(
+				WeaponValue.Bazooka,
+				function(_x, _y, _direction, _owner) {
+					notifyRadius(_x, _y, _owner, 800);
+					instance_create_layer(_x, _y, "Instances", prnt_bullet, {
+						moveDirection: _direction + random_range(-3, 3),
+						moveSpeed: 5,
+						owner: _owner,
+						onImpact: function() {
+							instance_create_layer(x, y, "Instances", o_explosion_96x64);	
+						}
+					});
+				},
+				FireMode.Semi,
+				ReloadMode.Clip,
+				seconds(.1), 1, seconds(1.8),
+				AmmoType.Explosives,
 				1
 			);
 			

@@ -12,6 +12,8 @@ vTargetX = 0;
 vTargetY = 0;
 vAccel = 10;
 
+focusPos = new Pos(x, y);
+
 stats = {
 	moveSpeed: 1.5,
 	runSpeed: 3
@@ -22,7 +24,7 @@ staminaSet = seconds(8);
 stamina = staminaSet;
 
 weapon = initWeaponry();
-weapon.equip(WeaponValue.Shotgun, 0);
+weapon.equip(WeaponValue.Bazooka, 0);
 weapon.equip(WeaponValue.AK47, 1);
 
 // Alerts enemies nearby when you are running

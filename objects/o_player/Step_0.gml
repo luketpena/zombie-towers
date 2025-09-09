@@ -54,7 +54,8 @@ var _isAiming = abs(_aimAxisH) > 0 || abs(_aimAxisV) > 0
 
 // Aim direction defaults to moveDirection if not actively aiming
 var _sourceAimDirection = _isAiming ? point_direction(0, 0, _aimAxisH, _aimAxisV) : moveDirection;
-aimDirection = _sourceAimDirection // round((_sourceAimDirection) / 15) * 15;
+aimDirection = _sourceAimDirection;
+focusPos.set(x + _aimAxisH * 128, y + _aimAxisV * 96);
 
 // Swap weapon
 if (gamepad_button_check_pressed(0, gp_face4)) {
