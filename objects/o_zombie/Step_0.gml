@@ -4,72 +4,141 @@ if (viewCheckTimer > 0) viewCheckTimer-- else {
 	_lookActive = true;
 }
 
-switch(awareness) {
-	case Awareness.Unaware:
-		if (!pathActive) {
-			// If wandering outside of the zone for too long, return back after a while
-			if (!inTheZone) {
-				if (wanderPatience > 0) wanderPatience-- else {
-					moveToTargetZone();	
-				}
-			}
-			// Wandering around when idle
-			if (wanderTimer > 0) wanderTimer-- else  {
-				wanderTimer = irandom_range(wanderTimerSet[0], wanderTimerSet[1]);
-				wander();	
-			}
+var _playerInView = noone;
+var _targetLineOfSight = false;
+
+if (stateTimer > 0) stateTimer--;
+switch(state) {
+	// Moving to and around the target zone
+	case "neutral":
+		if (!pathActive) moveToTargetZone();
+		_playerInView = _lookActive ? lookForTarget(o_player) : noone;
+		if (_playerInView) {
+			target = _playerInView
+			state = "chasing";	
+			moveMode = "direct";
+			pathActive = false;
 		}
-		
-		if (_lookActive) lookForTarget();
-			
 		break;
 		
-	case Awareness.Active:
-		var _viewClear = collision_line(x, y, target.x, target.y, prnt_block, false, true) == noone;
-		if (_viewClear) {
-			moveDirection = point_direction(x, y, target.x, target.y) + pathWobbleOffset;
-			distanceToTarget = point_distance(x, y, target.x, target.y);
-			currentSpeed =  min(distanceToTarget, moveSpeed);
-			if (currentSpeed > .25 && distanceToTarget > 16) {
-				var _vx = lengthdir_x(moveSpeed, moveDirection);
-				var _vy = lengthdir_y(moveSpeed, moveDirection);
-				setVelocityTarget(_vx, _vy);
-			}
-			
-			if (distanceToTarget < 24 && attackCooldown <= 0) {
-				attackCooldown = seconds_range(2, 4);
-				var _attackX = x + lengthdir_x(16, moveDirection);
-				var _attackY = y + lengthdir_y(12, moveDirection);
-				instance_create_layer(_attackX, _attackY, "Instances", o_zombieMeleeAttack);
+	// Can see and is moving towards a player target
+	case "chasing":
+		if (instance_exists(target)) {
+			_targetLineOfSight = _lookActive ? instanceInLineOfSight(target) == noone : true;
+			if (_targetLineOfSight) {
+				accelerateTowardsTarget();
+				triggerAttack();
+			} else {
+				state = "hunting";
+				createNewPath(target.x, target.y);
 			}
 		} else {
-			setAwareness(Awareness.Hunting);
-			createNewPath(target.x, target.y);
+			// TODO: handle target does not exist	
 		}
 		break;
 		
-	case Awareness.Hunting:
-		var _viewClearHunting = collision_line(x, y, target.x, target.y, prnt_block, false, true) == noone;
-		if (_viewClearHunting) {
-			setAwareness(Awareness.Active);
+	// Lost sight of the player target, but will move to where they were last seen
+	case "hunting":
+		// Looking for the player while hunting
+		_playerInView = _lookActive ? lookForTarget(o_player, viewAngleWide) : noone;
+		if (_playerInView) {
+			target = _playerInView;
+			state = "chasing";
+			moveMode = "direct";
+			pathActive = false;
+		}
+		// What do we do at the end of our hunting path?
+		if (!pathActive) {
+			state = "searching";
+			wanderTimer = wanderTimerSet[1];
+			stateTimer = seconds_range(10, 15);
+		}
+		break;
+	
+	// Arrived at last seen location, but player is not there. Wanders around for a bit before returning to target zone
+	case "searching":
+		_playerInView = _lookActive ? lookForTarget(o_player, viewAngleWide) : noone;
+		if (_playerInView) {
+			target = _playerInView;
+			state = "chasing";
+			moveMode = "direct";
+			pathActive = false;
+		}
+		if (stateTimer > 0) stateTimer-- else {
+			state = "neutral";
+		}
+		triggerWandering();
+		break;
+		
+	// Something is in the way - destroy it, then return to original path
+	case "destroy-barricade":
+		if (instance_exists(target)) {
+			accelerateTowardsTarget();
+			triggerAttack();
+		} else {
+			state = "hunting";
+			log("TARGET NO LONGER EXISTS");
+			createNewPath(ogTargetX, ogTargetY);
 		}
 		break;
 }
 
-if (attackCooldown > 0) attackCooldown--;
+//switch(awareness) {
+//	case Awareness.Unaware:
+//		if (!pathActive) {
+//			// If wandering outside of the zone for too long, return back after a while
+//			if (!inTheZone) {
+//				if (wanderPatience > 0) wanderPatience-- else {
+//					moveToTargetZone();	
+//				}
+//			}
+//			triggerWandering();
+//		}
+		
+//		if (_lookActive) lookForTarget();
+			
+//		break;
+		
+//	case Awareness.Active:
+//		if (instance_exists(target)) {
+//			var _viewClear = collision_line(x, y, target.x, target.y, prnt_block, false, true) == noone;
+//			if (_viewClear) {
+//				accelerateTowardsTarget();
+//				triggerAttack();
+//			} else {
+//				setAwareness(Awareness.Hunting);
+//				createNewPath(target.x, target.y);
+//			}
+//		} else {
+//			afterTargetDestroy();	
+//		}
+//		break;
+		
+//	case Awareness.Hunting:
+//		if (_lookActive) {
+//			var _viewClearHunting = collision_line(x, y, target.x, target.y, prnt_block, false, true) == noone;
+//			if (_viewClearHunting) {
+//				setAwareness(Awareness.Active);
+//			}
+//		}
+//		break;
+//}
 
+if (attackCooldown > 0) attackCooldown--;
 
 if (path_exists(myPath) && pathActive) {
 	// Sample a small step ahead along the path
-	var _pathSpeed = moveSpeed / path_get_length(myPath);
 	var px = path_get_x(myPath, path_position)
 	var py = path_get_y(myPath, path_position)
 	var _distanceToPoint = point_distance(x, y, px, py);
+	
+	// Only move along path if it is visible and within a certain range
 	var _canSeePoint = _lookActive ? collision_line(x, y, px, py, prnt_block, false, true) == noone : true;
-	if (_distanceToPoint < 48 && _canSeePoint) {
-		path_position += path_position == 0 ? (_pathSpeed * 8) : _pathSpeed; // advance along path
+	if (_distanceToPoint < moveSpeed * 8 && _canSeePoint) {
+		path_position += path_position == 0 ? (pathSpeed * 8) : pathSpeed; // advance along path
 	}
 	
+	// Sample the new path coords after path_position moved
 	px = path_get_x(myPath, path_position);
 	py = path_get_y(myPath, path_position);
 	moveDirection = point_direction(x, y, px, py) + pathWobbleOffset;
@@ -85,50 +154,55 @@ if (path_exists(myPath) && pathActive) {
 	var vy = lengthdir_y(currentSpeed, moveDirection);
 	
 	if (_distanceToEnd < 16) {
-		setAwareness(Awareness.Unaware);
+		pathActive = false;
 	}
 			
-	if (currentSpeed > .25) {
-		setVelocityTarget(vx, vy);
-
-		// Move patience running out (kicks them out of their path if blocked for long enough)
-		var _distanceMoved = point_distance(phy_position_x, phy_position_y, phy_position_xprevious, phy_position_yprevious);
-		if (_distanceMoved < moveSpeed * .5) {
-			if (movePatience > 0)
-				then movePatience--
-				else {
-					setAwareness(Awareness.Unaware);
-				}
-		} else {
-			movePatience = movePatienceSet;	
-		}
-					
-	} else {
-		setAwareness(Awareness.Unaware);
+	if (currentSpeed > moveSpeedMinThreshold) {
+		setVelocityTarget(vx, vy);				
 	}
 }
 
 if (stunned) {
 	stopVelocity(.95);
 } else {
-	var _speedAboveThreshold = currentSpeed > .25;
-	var _movingToPath = pathActive && point_distance(x, y, pathEndX, pathEndY) > 16;
-	var _movingToTarget = target != noone && distanceToTarget > 16;
+	var _speedAboveThreshold = currentSpeed > moveSpeedMinThreshold;
+	var _movingToPath = moveMode == "path" && pathActive && point_distance(x, y, pathEndX, pathEndY) > 16;
+	var _movingToTarget = moveMode == "direct" && target != noone && distanceToTarget > 16;
 	isMoving = _speedAboveThreshold && (_movingToPath || _movingToTarget);
-
+	
 	if (isMoving) {
-		pathWobble = pathWobble + pathWobbleRate mod 360;
-		pathWobbleOffset = lengthdir_x(pathWobbleDistance, pathWobble);
-	
-		var _vDiffX = vTargetX - phy_linear_velocity_x;
-		var _vDiffY = vTargetY - phy_linear_velocity_y;
-	
-		var _vPushX = clamp(_vDiffX, -vAccel, vAccel);
-		var _vPushY = clamp(_vDiffY, -vAccel, vAccel);
-	
-		phy_linear_velocity_x += _vPushX;
-		phy_linear_velocity_y += _vPushY;
+		move();
 	} else {
 		stopVelocity();	
 	}
+}
+
+if (isMoving) {
+	// Move patience running out (kicks them out of their path if blocked for long enough)
+	var _distanceMoved = point_distance(phy_position_x, phy_position_y, phy_position_xprevious, phy_position_yprevious);
+	if (_distanceMoved < moveSpeed * .1) {
+		if (state != "destroy-barricade") {
+			// Check for destructable obstruction
+			var _checkDis = moveSpeed + 4;
+			var _collisionInPath = collision_circle(x + lengthdir_x(_checkDis, moveDirection), y + lengthdir_y(_checkDis, moveDirection), _checkDis, prnt_destructable, false, true);
+			// Move to destroy obstruction if it is in front
+			if (_collisionInPath != noone) {
+				state = "destroy-barricade";
+				pathActive = false;
+				// Restart the original path
+				var _targetExists = instance_exists(target);
+				ogTargetX = pathActive ? pathEndX : (_targetExists && target.object_index == o_player ? target.x : ogTargetX);
+				ogTargetY = pathActive ? pathEndY : (_targetExists && target.object_index == o_player ? target.y : ogTargetY);
+				target = _collisionInPath;
+			}
+		}
+		
+		if (movePatience > 0)
+			then movePatience--
+			else {
+				moveToTargetZone();
+			}
+	} 	
+} else {
+	movePatience = movePatienceSet;	
 }

@@ -46,6 +46,26 @@ enum WeaponValue {
 	Bazooka
 }
 
+function weaponStringToValue(_stringName) {
+	switch(_stringName) {
+		case "pistol": return WeaponValue.Pistol;
+		case "shotgun": return WeaponValue.Shotgun;
+		case "ak47": return WeaponValue.AK47;
+		case "bazooka": return WeaponValue.Bazooka;
+		default: return undefined;	
+	}
+}
+
+function weaponValueToString(_WeaponValue) {
+	switch(_WeaponValue) {
+		case WeaponValue.Pistol: return "pistol";	
+		case WeaponValue.Shotgun: return "shotgun";	
+		case WeaponValue.AK47: return "ak47";	
+		case WeaponValue.Bazooka: return "bazooka";	
+		default: return undefined;
+	}
+}
+
 function initWeaponry() {
 	return {
 		/* WEAPON SLOTS */

@@ -2,7 +2,6 @@ var _currentWeapon = weapon.currentWeapon();
 for (var i=0; i<_currentWeapon.roundsInClip; i++) {
 	draw_sprite_ext(s_ui_ammo, 0, 20 + (8 * i), 16, 1, 1, 0, c_white, 1);	
 }
-log(_currentWeapon.stats.weaponValue);
 draw_sprite_ext(s_ui_weaponHudIcons, _currentWeapon.stats.weaponValue ?? 0, 0, 12, 1, 1, 0, c_white, 1);
 
 draw_set_color(c_red);

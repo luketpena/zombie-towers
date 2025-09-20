@@ -14,7 +14,10 @@
     "name":"towers",
     "path":"folders/towers.yy",
   },
-  "parentObjectId":null,
+  "parentObjectId":{
+    "name":"prnt_destructable",
+    "path":"objects/prnt_destructable/prnt_destructable.yy",
+  },
   "persistent":false,
   "physicsAngularDamping":0.1,
   "physicsDensity":0.0,

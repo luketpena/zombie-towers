@@ -1,0 +1,1 @@
+impactTarget(other);

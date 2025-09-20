@@ -1,3 +1,5 @@
+if (!CONFIG.towers_active) exit;
+
 var _list = ds_list_create();
 collision_circle_list(x, y, radius, prnt_enemy, false, true, _list, true);
 

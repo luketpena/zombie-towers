@@ -6,6 +6,10 @@ function heal(_amount) {
 	hp = min(hp + _amount, 100);
 }
 
+function damage(_amount) {
+	hp = max(hp - _amount, 0);	
+}
+
 phy_fixed_rotation = true;
 
 vTargetX = 0;
@@ -35,3 +39,23 @@ runningSoundTimer = runningSoundTimerSet;
 isBuilding = false;
 buildIsClear = false;
 buildPos = new Pos();
+
+pickupRange = 24;
+closestPickup = noone;
+function checkForPickup() {
+	var _nearest = instance_nearest(x, y, prnt_grab);
+	if (_nearest) {
+		var _dis = point_distance(x, y, _nearest.x, _nearest.y);
+		if (_dis < pickupRange) {
+			_nearest.active = true;
+			if (gamepad_button_check_pressed(0, gp_face3)) {
+				
+				instance_create_layer(x, y, "Instances", prnt_weaponPickup, {
+					weaponString: weaponValueToString(weapon.currentWeapon().stats.weaponValue)
+				});
+				weapon.equip(_nearest.weaponValue, weapon.equippedSlot);
+				instance_destroy(_nearest);
+			}
+		}
+	}
+}

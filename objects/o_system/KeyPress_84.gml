@@ -1,1 +1,1 @@
-instance_create_layer(mouse_x, mouse_y, layer, o_explosion_96x64);
+instance_create_layer(mouse_x, mouse_y, layer, o_zombie);

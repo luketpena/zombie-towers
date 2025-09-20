@@ -1,3 +1,5 @@
+if (!active) return;
+
 var _mobCount = instance_number(prnt_enemy);
 
 if (_mobCount < mobNextRoundThreshold) {

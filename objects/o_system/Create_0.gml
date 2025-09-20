@@ -3,3 +3,4 @@ mp_grid_add_instances(global.pathGrid, prnt_block, false);
 gamepad_set_axis_deadzone(0, .3);
 
 global.ecto = 0;
+configInit();

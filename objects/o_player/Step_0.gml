@@ -77,3 +77,5 @@ if (isBuilding) {
 		instance_create_layer(buildPos.x, buildPos.y, "Instances", o_test_tower);
 	}
 }
+
+checkForPickup()

@@ -1,5 +1,5 @@
+active = CONFIG.spawners_active;
 gameRound = 0;
-
 mobCountStart = 100;
 mobCountPerRound = 0;
 mobNextRoundThreshold = 3;
